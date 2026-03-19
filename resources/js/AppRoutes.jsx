@@ -1,0 +1,32 @@
+import { Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Home from './pages/Home';
+import NewsDetail from './pages/NewsDetail';
+import Login from './pages/admin/Login';
+import AdminLayout from './components/AdminLayout';
+import Categories from './pages/admin/Categories';
+import CategoryForm from './pages/admin/CategoryForm';
+import NewsList from './pages/admin/NewsList';
+import NewsForm from './pages/admin/NewsForm';
+
+export default function AppRoutes() {
+    return (
+        <Routes>
+            <Route element={<Layout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/noticias/:slug" element={<NewsDetail />} />
+            </Route>
+
+            <Route path="/admin/login" element={<Login />} />
+
+            <Route path="/admin" element={<AdminLayout />}>
+                <Route path="categorias" element={<Categories />} />
+                <Route path="categorias/criar" element={<CategoryForm />} />
+                <Route path="categorias/:id/editar" element={<CategoryForm />} />
+                <Route path="noticias" element={<NewsList />} />
+                <Route path="noticias/criar" element={<NewsForm />} />
+                <Route path="noticias/:id/editar" element={<NewsForm />} />
+            </Route>
+        </Routes>
+    );
+}

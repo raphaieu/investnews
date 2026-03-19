@@ -1,0 +1,145 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap");
+@import "tailwindcss";
+
+:root {
+    --i10-bg: #f8fafc;
+    --i10-surface: #ffffff;
+    --i10-surface-soft: #f1f5f9;
+    --i10-border: #e2e8f0;
+    --i10-text: #1b2430;
+    --i10-text-muted: #5f6877;
+    --i10-brand: #0f274a;
+    --i10-brand-hover: #1a3763;
+    --i10-accent: #b99a56;
+    --i10-danger: #b42318;
+}
+
+@layer base {
+    body {
+        margin: 0;
+        font-family: "Barlow", sans-serif;
+        background: var(--i10-bg);
+        color: var(--i10-text);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: "Manrope", sans-serif;
+        color: var(--i10-text);
+    }
+
+    a {
+        color: inherit;
+    }
+}
+
+@layer components {
+    .i10-page {
+        background-color: var(--i10-bg);
+        color: var(--i10-text);
+        overflow-x: clip;
+    }
+
+    .i10-header {
+        background-color: var(--i10-surface);
+        border-bottom: 1px solid var(--i10-border);
+        backdrop-filter: saturate(180%) blur(6px);
+    }
+
+    .i10-card {
+        background-color: var(--i10-surface);
+        border: 1px solid var(--i10-border);
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px -24px rgb(15 23 42 / 35%), 0 2px 6px -4px rgb(15 23 42 / 22%);
+    }
+
+    .i10-card-soft {
+        background-color: var(--i10-surface-soft);
+        border: 1px solid var(--i10-border);
+        border-radius: 0.75rem;
+        box-shadow: 0 8px 20px -24px rgb(15 23 42 / 30%);
+    }
+
+    .i10-input {
+        border: 1px solid var(--i10-border);
+        border-radius: 0.5rem;
+        background: var(--i10-surface);
+        color: var(--i10-text);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .i10-input:focus {
+        outline: none;
+        border-color: var(--i10-brand);
+        box-shadow: 0 0 0 3px rgb(15 39 74 / 12%);
+    }
+
+    .i10-btn-primary {
+        background-color: var(--i10-brand);
+        color: #fff;
+        border: 1px solid var(--i10-brand);
+        border-radius: 0.5rem;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        box-shadow: 0 8px 20px -18px rgb(15 39 74 / 45%);
+    }
+
+    .i10-btn-primary:hover {
+        background-color: var(--i10-brand-hover);
+        box-shadow: 0 10px 24px -18px rgb(15 39 74 / 55%);
+    }
+
+    .i10-btn-primary:active {
+        transform: translateY(1px);
+    }
+
+    .i10-btn-outline {
+        background-color: transparent;
+        color: var(--i10-brand);
+        border: 1px solid var(--i10-brand);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .i10-btn-outline:hover {
+        background-color: var(--i10-brand);
+        color: #fff;
+    }
+
+    .i10-link {
+        color: var(--i10-brand);
+        transition: color 0.2s ease;
+    }
+
+    .i10-link:hover {
+        color: var(--i10-brand-hover);
+    }
+
+    .i10-muted {
+        color: var(--i10-text-muted);
+    }
+
+    .i10-badge {
+        background-color: rgb(185 154 86 / 12%);
+        color: #876f36;
+        border: 1px solid rgb(185 154 86 / 45%);
+        border-radius: 9999px;
+    }
+
+    .i10-table-head {
+        background-color: var(--i10-surface-soft);
+        border-bottom: 1px solid var(--i10-border);
+    }
+
+    .i10-highlight {
+        background-color: rgb(185 154 86 / 26%);
+        color: inherit;
+        padding: 0.06rem 0.24rem;
+        border-radius: 0.3rem;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+    }
+}
