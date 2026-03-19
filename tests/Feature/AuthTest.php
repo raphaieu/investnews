@@ -19,6 +19,7 @@ class AuthTest extends TestCase
 
         $response = $this->withHeaders([
             'Origin' => config('app.url'),
+            'Referer' => rtrim(config('app.url'), '/').'/',
         ])->postJson('/api/login', [
             'email' => 'admin@investnews.com',
             'password' => 'password',
@@ -37,6 +38,7 @@ class AuthTest extends TestCase
 
         $response = $this->withHeaders([
             'Origin' => config('app.url'),
+            'Referer' => rtrim(config('app.url'), '/').'/',
         ])->postJson('/api/login', [
             'email' => 'admin@investnews.com',
             'password' => 'wrong',

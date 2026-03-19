@@ -20,7 +20,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciais inválidas.'], 401);
         }
 
-        $request->session()->regenerate();
+        // Usa o store de sessão da aplicação (compatível com testes / Sanctum stateful)
+        session()->regenerate();
 
         return response()->json(Auth::user());
     }
@@ -28,8 +29,8 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        session()->invalidate();
+        session()->regenerateToken();
 
         return response()->json(['message' => 'Logout realizado.']);
     }
