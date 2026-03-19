@@ -106,6 +106,16 @@ tests/Feature/                   # Testes de feature
 docker/                          # Dockerfiles e configs
 ```
 
+## Deploy em HTTPS (evitar mixed content)
+
+Se a página abre em **HTTPS** mas o console bloqueia CSS/JS do Vite com *Mixed Content* (URLs em **http://**), configure:
+
+1. **`APP_URL`** com `https://` (ex.: `APP_URL=https://ckao.in`).
+2. **`TRUSTED_PROXIES`** atrás de nginx/Cloudflare/proxy que envia `X-Forwarded-Proto` (ex.: `TRUSTED_PROXIES=*` ou IPs do proxy).
+3. Opcional: **`FORCE_HTTPS=true`** para forçar esquema HTTPS na geração de URLs em ambientes que não usam `APP_ENV=production`.
+
+Depois: `php artisan config:clear` e garantir `npm run build` com os assets em `public/build`.
+
 ## URL online
 
 > https://ckao.in

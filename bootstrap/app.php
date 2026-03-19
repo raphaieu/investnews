@@ -13,6 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+
+        // Atrás de nginx/Cloudflare/etc.: usa X-Forwarded-Proto para URL/asset corretos
+        $trusted = env('TRUSTED_PROXIES');
+        if ($trusted !== null && $trusted !== '') {
+            $at = $trusted === '*' ? '*' : array_map('trim', explode(',', $trusted));
+            $middleware->trustProxies(at: $at);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
