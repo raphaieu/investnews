@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
+use App\Models\News;
 
 class UpdateNewsRequest extends FormRequest
 {
@@ -13,8 +15,34 @@ class UpdateNewsRequest extends FormRequest
 
     public function rules(): array
     {
+        $slugRule = function (string $attribute, mixed $value, \Closure $fail): void {
+            $title = (string) $value;
+            $slug = Str::slug($title);
+
+            if ($slug === '') {
+                return;
+            }
+
+            $routeNews = $this->route('news');
+            $currentId = $routeNews?->id;
+
+            $query = News::query()->where('slug', $slug);
+            if ($currentId) {
+                $query->where('id', '!=', $currentId);
+            }
+
+            if ($query->exists()) {
+                $fail('Já existe uma notícia com este título.');
+            }
+        };
+
         return [
-            'title' => ['required', 'string', 'max:255'],
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+                $slugRule,
+            ],
             'content' => ['required', 'string'],
             'category_id' => ['required', 'exists:categories,id'],
             'published_at' => ['nullable', 'date_format:Y-m-d'],

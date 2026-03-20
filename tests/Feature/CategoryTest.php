@@ -75,4 +75,31 @@ class CategoryTest extends TestCase
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.name', 'Renda Fixa');
     }
+
+    public function test_admin_cannot_create_category_with_duplicated_slug(): void
+    {
+        Category::factory()->create(['name' => 'Ações', 'slug' => 'acoes']);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/api/admin/categories', [
+                'name' => 'Acoes', // slug = "acoes"
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name']);
+    }
+
+    public function test_admin_cannot_update_category_to_duplicated_slug(): void
+    {
+        $other = Category::factory()->create(['name' => 'Ações', 'slug' => 'acoes']);
+        $category = Category::factory()->create(['name' => 'Tecnologia', 'slug' => 'tecnologia']);
+
+        $response = $this->actingAs($this->admin)
+            ->putJson("/api/admin/categories/{$category->id}", [
+                'name' => 'Acoes', // slug = "acoes"
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name']);
+    }
 }
