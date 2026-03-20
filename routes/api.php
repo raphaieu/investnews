@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PublicNewsController;
 use App\Http\Controllers\Api\PublicCategoryController;
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\CacheNewsDebugController;
 use App\Http\Controllers\Api\Admin\NewsController;
 
 // Auth
@@ -20,5 +21,6 @@ Route::get('/news/{slug}', [PublicNewsController::class, 'show']);
 // Admin (protected)
 Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::apiResource('categories', CategoryController::class);
+    Route::get('/debug/cache/news', [CacheNewsDebugController::class, 'index']);
     Route::apiResource('news', NewsController::class);
 });

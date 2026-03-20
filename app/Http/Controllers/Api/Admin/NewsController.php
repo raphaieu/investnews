@@ -6,33 +6,28 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsRequest;
 use App\Http\Requests\UpdateNewsRequest;
 use App\Http\Resources\NewsResource;
-use App\Models\News;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use App\Models\News;
+use App\Services\News\NewsService;
 
 class NewsController extends Controller
 {
+    public function __construct(private readonly NewsService $newsService)
+    {
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
-        $search = trim((string) $request->query('search', ''));
-        $perPage = (int) $request->query('per_page', 10);
-        $perPage = max(5, min($perPage, 50));
+        $paginator = $this->newsService->adminIndex($request);
 
-        return NewsResource::collection(
-            News::with('category')
-                ->when($search !== '', function ($query) use ($search) {
-                    $query->where('title', 'like', "%{$search}%");
-                })
-                ->orderByDesc('created_at')
-                ->paginate($perPage)
-                ->withQueryString()
-        );
+        return NewsResource::collection($paginator);
     }
 
     public function store(StoreNewsRequest $request): JsonResponse
     {
-        $news = News::create($request->validated());
+        $news = $this->newsService->adminCreate($request->validated());
 
         return (new NewsResource($news->load('category')))
             ->response()
@@ -46,14 +41,14 @@ class NewsController extends Controller
 
     public function update(UpdateNewsRequest $request, News $news): NewsResource
     {
-        $news->update($request->validated());
+        $news = $this->newsService->adminUpdate($news, $request->validated());
 
         return new NewsResource($news->load('category'));
     }
 
     public function destroy(News $news): JsonResponse
     {
-        $news->delete();
+        $this->newsService->adminDelete($news);
 
         return response()->json(null, 204);
     }
