@@ -7,6 +7,9 @@ export default function NewsList() {
     const [news, setNews] = useState([]);
     const [pagination, setPagination] = useState({});
     const [loading, setLoading] = useState(true);
+    const [cacheDebug, setCacheDebug] = useState(null);
+    const [cacheDebugLoading, setCacheDebugLoading] = useState(false);
+    const [cacheDebugError, setCacheDebugError] = useState(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -72,9 +75,35 @@ export default function NewsList() {
                     <h1 className="text-2xl font-bold">Notícias</h1>
                     <p className="i10-muted text-sm mt-1">Gerencie notícias com busca e paginação.</p>
                 </div>
-                <Link to="/admin/noticias/criar" className="i10-btn-primary px-4 py-2 text-sm">
-                    Nova notícia
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCacheDebugError(null);
+                            setCacheDebugLoading(true);
+                            setCacheDebug(null);
+
+                            api.get('/admin/debug/cache/news?pattern=news:*&limit=100')
+                                .then(({ data }) => setCacheDebug(data))
+                                .catch((err) => {
+                                    const msg = err?.response?.data?.error
+                                        || err?.response?.data?.warning
+                                        || err?.message
+                                        || 'Erro ao carregar cache debug.';
+                                    setCacheDebugError(msg);
+                                })
+                                .finally(() => setCacheDebugLoading(false));
+                        }}
+                        className="i10-btn-outline px-4 py-2 text-sm"
+                        disabled={cacheDebugLoading}
+                        aria-label="Abrir debug do cache de notícias"
+                    >
+                        {cacheDebugLoading ? 'Carregando...' : 'Debug cache'}
+                    </button>
+                    <Link to="/admin/noticias/criar" className="i10-btn-primary px-4 py-2 text-sm">
+                        Nova notícia
+                    </Link>
+                </div>
             </div>
 
             <div className="i10-card p-4">
@@ -110,6 +139,38 @@ export default function NewsList() {
                 <div className="i10-card p-10 text-center i10-muted">Nenhuma notícia cadastrada.</div>
             ) : (
                 <div className="i10-card overflow-hidden">
+                    {cacheDebugError && (
+                        <div className="p-4 border-b border-(--i10-border) i10-muted">
+                            <span className="text-[var(--i10-danger)]">{cacheDebugError}</span>
+                        </div>
+                    )}
+
+                    {cacheDebug && (
+                        <div className="p-4 border-b border-(--i10-border) space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <h2 className="font-semibold">Cache debug: `news:*`</h2>
+                                    <p className="i10-muted text-sm mt-1">
+                                        store: {String(cacheDebug.store)} | prefix: {String(cacheDebug.cachePrefix)}
+                                    </p>
+                                </div>
+                                <div className="text-sm i10-muted">
+                                    Chaves encontradas: {Array.isArray(cacheDebug.foundKeys) ? cacheDebug.foundKeys.length : 0}
+                                </div>
+                            </div>
+
+                            <div className="max-h-[360px] overflow-auto rounded-md border border-(--i10-border)">
+                                <pre className="p-3 text-xs whitespace-pre-wrap break-words">
+                                    {JSON.stringify({
+                                        requestedPattern: cacheDebug.requestedPattern,
+                                        foundKeys: cacheDebug.foundKeys,
+                                        items: cacheDebug.items,
+                                    }, null, 2)}
+                                </pre>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="overflow-x-auto">
                     <table className="w-full text-sm min-w-[760px]">
                         <thead className="i10-table-head">

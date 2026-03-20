@@ -3,32 +3,32 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\NewsResource;
-use App\Models\News;
+use App\Services\News\NewsService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PublicNewsController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function __construct(private readonly NewsService $newsService)
     {
-        $news = News::with('category')
-            ->published()
-            ->search($request->query('search'))
-            ->inCategory($request->query('category'))
-            ->orderByDesc('published_at')
-            ->paginate(12);
-
-        return NewsResource::collection($news);
     }
 
-    public function show(string $slug): NewsResource
+    public function index(Request $request)
     {
-        $news = News::with('category')
-            ->published()
-            ->where('slug', $slug)
-            ->firstOrFail();
+        $search = $request->query('search');
+        $categorySlug = $request->query('category');
 
-        return new NewsResource($news);
+        $page = (int) $request->query('page', 1);
+        $perPage = (int) $request->query('per_page', 12);
+
+        $payload = $this->newsService->publicIndexPayload($search, $categorySlug, $page, $perPage);
+
+        return response()->json($payload);
+    }
+
+    public function show(string $slug)
+    {
+        $payload = $this->newsService->publicShowPayload($slug);
+
+        return response()->json($payload);
     }
 }

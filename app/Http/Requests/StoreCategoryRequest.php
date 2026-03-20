@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
+use App\Models\Category;
 
 class StoreCategoryRequest extends FormRequest
 {
@@ -13,8 +15,29 @@ class StoreCategoryRequest extends FormRequest
 
     public function rules(): array
     {
+        $slugRule = function (string $attribute, mixed $value, \Closure $fail): void {
+            $name = (string) $value;
+            $slug = Str::slug($name);
+
+            if ($slug === '') {
+                return;
+            }
+
+            $exists = Category::query()->where('slug', $slug)->exists();
+
+            if ($exists) {
+                $fail('Já existe uma categoria com este nome.');
+            }
+        };
+
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:categories,name',
+                $slugRule,
+            ],
         ];
     }
 

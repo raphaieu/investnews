@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Cache\NewsCache;
+use App\Models\News;
+use App\Observers\NewsObserver;
+use App\Repositories\News\EloquentNewsRepository;
+use App\Repositories\News\NewsRepositoryInterface;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,7 +17,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(NewsRepositoryInterface::class, EloquentNewsRepository::class);
+        $this->app->singleton(NewsCache::class);
     }
 
     /**
@@ -27,5 +33,7 @@ class AppServiceProvider extends ServiceProvider
         if ($forceHttps) {
             URL::forceScheme('https');
         }
+
+        News::observe(NewsObserver::class);
     }
 }

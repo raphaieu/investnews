@@ -67,4 +67,50 @@ class NewsTest extends TestCase
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.title', 'Mercado futuro em alta');
     }
+
+    public function test_admin_cannot_create_news_with_duplicated_title_slug(): void
+    {
+        News::factory()->create([
+            'title' => 'Título duplicado',
+            'slug' => 'titulo-duplicado',
+            'category_id' => $this->category->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/api/admin/news', [
+                'title' => 'Título duplicado',
+                'content' => 'Conteudo qualquer',
+                'category_id' => $this->category->id,
+                'published_at' => '2026-03-19',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['title']);
+    }
+
+    public function test_admin_cannot_update_news_to_duplicated_title_slug(): void
+    {
+        $other = News::factory()->create([
+            'title' => 'Outro titulo',
+            'slug' => 'outro-titulo',
+            'category_id' => $this->category->id,
+        ]);
+
+        $news = News::factory()->create([
+            'title' => 'Titulo atual',
+            'slug' => 'titulo-atual',
+            'category_id' => $this->category->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->putJson("/api/admin/news/{$news->id}", [
+                'title' => $other->title, // gera slug duplicado
+                'content' => 'Conteudo atualizado',
+                'category_id' => $this->category->id,
+                'published_at' => '2026-03-19',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['title']);
+    }
 }
