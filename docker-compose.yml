@@ -11,6 +11,19 @@ services:
     networks:
       - investnews
 
+  horizon:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/var/www/html
+    command: php artisan horizon
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - investnews
+
   nginx:
     image: nginx:alpine
     ports:

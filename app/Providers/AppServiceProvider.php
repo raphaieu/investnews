@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Cache\NewsCache;
 use App\Models\News;
 use App\Observers\NewsObserver;
+use App\Repositories\Contacts\ContactRepositoryInterface;
+use App\Repositories\Contacts\EloquentContactRepository;
 use App\Repositories\News\EloquentNewsRepository;
 use App\Repositories\News\NewsRepositoryInterface;
 use Illuminate\Support\Facades\URL;
@@ -18,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(NewsRepositoryInterface::class, EloquentNewsRepository::class);
+        $this->app->singleton(ContactRepositoryInterface::class, EloquentContactRepository::class);
         $this->app->singleton(NewsCache::class);
     }
 

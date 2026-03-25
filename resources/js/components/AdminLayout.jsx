@@ -45,6 +45,20 @@ export default function AdminLayout() {
                         >
                             Notícias
                         </Link>
+                        <Link
+                            to="/admin/contatos"
+                            className={`text-sm px-3 py-1.5 rounded-md border transition-colors ${isActive('/admin/contatos') ? 'bg-(--i10-brand) text-white border-(--i10-brand)' : 'bg-(--i10-surface) i10-muted border-(--i10-border) hover:text-(--i10-text)'}`}
+                        >
+                            Contatos
+                        </Link>
+                        <a
+                            href="/horizon"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm px-3 py-1.5 rounded-md border bg-(--i10-surface) i10-muted border-(--i10-border) hover:text-(--i10-text) transition-colors"
+                        >
+                            Horizon
+                        </a>
                         <button
                             onClick={logout}
                             className="text-sm px-3 py-1.5 rounded-md border border-red-200 text-(--i10-danger) hover:bg-red-50 transition-colors"

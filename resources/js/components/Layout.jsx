@@ -110,7 +110,13 @@ export default function Layout() {
                             </button>
                         </form>
 
-                        <div className="w-full md:w-auto md:ml-auto flex items-center justify-end">
+                        <div className="w-full md:w-auto md:ml-auto flex flex-wrap items-center justify-end gap-2">
+                            <Link
+                                to="/contato"
+                                className="i10-btn-outline px-3 py-2 text-sm font-medium shrink-0"
+                            >
+                                Contato
+                            </Link>
                             {loading ? (
                                 <span className="text-sm i10-muted">Verificando acesso...</span>
                             ) : user ? (
