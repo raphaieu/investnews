@@ -45,6 +45,7 @@ class UpdateCategoryRequest extends FormRequest
                 Rule::unique('categories', 'name')->ignore($this->route('category')),
                 $slugRule,
             ],
+            'color' => ['nullable', 'string', 'max:50'],
         ];
     }
 

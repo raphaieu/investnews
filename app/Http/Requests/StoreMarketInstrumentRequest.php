@@ -23,6 +23,7 @@ class StoreMarketInstrumentRequest extends FormRequest
                 Rule::unique('market_instruments', 'symbol'),
             ],
             'display_name' => ['required', 'string', 'max:255'],
+            'feed_id' => ['nullable', 'string', 'max:32'],
         ];
     }
 

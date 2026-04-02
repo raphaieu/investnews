@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import MarketTickerWidget from '../components/MarketTickerWidget';
 
-const categoryStyleMap = {
-    tecnologia: 'bg-sky-200 text-sky-800 border-sky-300',
-    economia: 'bg-emerald-200 text-emerald-800 border-emerald-300',
-    'renda-fixa': 'bg-indigo-200 text-indigo-800 border-indigo-300',
-    mercado: 'bg-amber-200 text-amber-800 border-amber-300',
-    politica: 'bg-rose-200 text-rose-800 border-rose-300',
+const COLOR_STYLE_MAP = {
+    sky:     { badge: 'bg-sky-200 text-sky-800 border-sky-300',         placeholder: 'from-sky-200 to-blue-300' },
+    emerald: { badge: 'bg-emerald-200 text-emerald-800 border-emerald-300', placeholder: 'from-emerald-200 to-teal-300' },
+    indigo:  { badge: 'bg-indigo-200 text-indigo-800 border-indigo-300',   placeholder: 'from-indigo-200 to-violet-300' },
+    amber:   { badge: 'bg-amber-200 text-amber-800 border-amber-300',     placeholder: 'from-amber-200 to-orange-300' },
+    rose:    { badge: 'bg-rose-200 text-rose-800 border-rose-300',         placeholder: 'from-rose-200 to-pink-300' },
+    violet:  { badge: 'bg-violet-200 text-violet-800 border-violet-300',   placeholder: 'from-violet-200 to-purple-300' },
+    cyan:    { badge: 'bg-cyan-200 text-cyan-800 border-cyan-300',         placeholder: 'from-cyan-200 to-teal-300' },
+    orange:  { badge: 'bg-orange-200 text-orange-800 border-orange-300',   placeholder: 'from-orange-200 to-amber-300' },
+    yellow:  { badge: 'bg-yellow-200 text-yellow-800 border-yellow-300',   placeholder: 'from-yellow-200 to-amber-300' },
+    lime:    { badge: 'bg-lime-200 text-lime-800 border-lime-300',         placeholder: 'from-lime-200 to-green-300' },
 };
 
-const categoryPlaceholderMap = {
-    tecnologia: 'from-sky-200 to-blue-300',
-    economia: 'from-emerald-200 to-teal-300',
-    'renda-fixa': 'from-indigo-200 to-violet-300',
-    mercado: 'from-amber-200 to-orange-300',
-    politica: 'from-rose-200 to-pink-300',
-};
+const DEFAULT_STYLE = { badge: 'bg-slate-100 text-slate-600 border-slate-200', placeholder: 'from-slate-100 to-slate-200' };
 
 const escapeRegExp = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&');
 
@@ -51,6 +50,16 @@ export default function Home() {
             .finally(() => setLoading(false));
     }, [search, category, currentPage]);
 
+    const categoryColorMap = useMemo(() => {
+        const map = {};
+        categories.forEach((cat) => {
+            if (cat.color) {
+                map[cat.slug] = cat.color;
+            }
+        });
+        return map;
+    }, [categories]);
+
     const handleCategoryFilter = (slug) => {
         const params = new URLSearchParams(searchParams);
         if (slug) {
@@ -83,19 +92,21 @@ export default function Home() {
         setSearchParams(params);
     };
 
-    const getCategoryBadgeClass = (slug) =>
-        categoryStyleMap[slug] || 'bg-slate-100 text-slate-600 border-slate-200';
+    const getCategoryStyle = (slug) => {
+        const color = categoryColorMap[slug];
+        return COLOR_STYLE_MAP[color] || DEFAULT_STYLE;
+    };
 
-    const getCategoryPlaceholderClass = (slug) =>
-        categoryPlaceholderMap[slug] || 'from-slate-100 to-slate-200';
-
-    const searchTokens = Array.from(
-        new Set(
-            search
-                .trim()
-                .split(/\s+/)
-                .filter((token) => token.length > 1)
-        )
+    const searchTokens = useMemo(() =>
+        Array.from(
+            new Set(
+                search
+                    .trim()
+                    .split(/\s+/)
+                    .filter((token) => token.length > 1)
+            )
+        ),
+        [search]
     );
 
     const highlightText = (text) => {
@@ -205,13 +216,15 @@ export default function Home() {
             ) : (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
-                        {news.map((item) => (
+                        {news.map((item) => {
+                            const style = getCategoryStyle(item.category?.slug);
+                            return (
                             <Link
                                 key={item.id}
                                 to={`/noticias/${item.slug}`}
                                 className="i10-card overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg h-full cursor-pointer group"
                             >
-                                <div className={`h-40 bg-linear-to-br ${getCategoryPlaceholderClass(item.category?.slug)} border-b border-slate-200`}>
+                                <div className={`h-40 bg-linear-to-br ${style.placeholder} border-b border-slate-200`}>
                                     {item.image_url ? (
                                         <img
                                             src={item.image_url}
@@ -225,7 +238,7 @@ export default function Home() {
                                 </div>
                                 <div className="p-6 flex-1">
                                     {item.category && (
-                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border uppercase tracking-wide ${getCategoryBadgeClass(item.category.slug)}`}>
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border uppercase tracking-wide ${style.badge}`}>
                                             {item.category.name}
                                         </span>
                                     )}
@@ -242,7 +255,8 @@ export default function Home() {
                                     </span>
                                 </div>
                             </Link>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {pagination.last_page > 1 && (

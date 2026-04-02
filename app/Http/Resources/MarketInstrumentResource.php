@@ -15,6 +15,7 @@ class MarketInstrumentResource extends JsonResource
             'id' => $this->id,
             'symbol' => $this->symbol,
             'display_name' => $this->display_name,
+            'feed_id' => $this->feed_id,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

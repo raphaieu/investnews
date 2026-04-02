@@ -1,67 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import usePagination from '../../hooks/usePagination';
 
 export default function Categories() {
-    const [categories, setCategories] = useState([]);
-    const [pagination, setPagination] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [searchParams, setSearchParams] = useSearchParams();
-
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const search = searchParams.get('search') || '';
-    const [searchTerm, setSearchTerm] = useState(search);
-
-    useEffect(() => {
-        setSearchTerm(search);
-    }, [search]);
-
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            const normalized = searchTerm.trim();
-            if (normalized === search) return;
-
-            const params = new URLSearchParams(searchParams);
-            if (normalized) params.set('search', normalized);
-            else params.delete('search');
-            params.delete('page');
-            setSearchParams(params, { replace: true });
-        }, 300);
-
-        return () => window.clearTimeout(timer);
-    }, [searchTerm, search, searchParams, setSearchParams]);
-
-    const fetchCategories = () => {
-        setLoading(true);
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('per_page', '10');
-        if (search) params.set('search', search);
-
-        api.get(`/admin/categories?${params.toString()}`)
-            .then(({ data }) => {
-                setCategories(data.data || []);
-                setPagination(data.meta || {});
-            })
-            .finally(() => setLoading(false));
-    };
-
-    useEffect(() => {
-        fetchCategories();
-    }, [page, search]);
-
-    const totalPages = useMemo(() => pagination.last_page || 1, [pagination.last_page]);
-
-    const handlePageChange = (targetPage) => {
-        const params = new URLSearchParams(searchParams);
-        params.set('page', String(targetPage));
-        setSearchParams(params);
-    };
+    const {
+        items: categories,
+        pagination,
+        loading,
+        page,
+        searchTerm,
+        setSearchTerm,
+        totalPages,
+        handlePageChange,
+        refresh,
+    } = usePagination('/admin/categories');
 
     const handleDelete = async (id) => {
         if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
         await api.delete(`/admin/categories/${id}`);
-        fetchCategories();
+        refresh();
     };
 
     return (
@@ -115,6 +72,7 @@ export default function Categories() {
                             <tr>
                                 <th className="text-left px-6 py-3 font-medium i10-muted">Nome</th>
                                 <th className="text-left px-6 py-3 font-medium i10-muted">Slug</th>
+                                <th className="text-left px-6 py-3 font-medium i10-muted">Cor</th>
                                 <th className="text-right px-6 py-3 font-medium i10-muted">Ações</th>
                             </tr>
                         </thead>
@@ -123,6 +81,7 @@ export default function Categories() {
                                 <tr key={cat.id}>
                                     <td className="px-6 py-4">{cat.name}</td>
                                     <td className="px-6 py-4 i10-muted">{cat.slug}</td>
+                                    <td className="px-6 py-4 i10-muted">{cat.color || '-'}</td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="inline-flex items-center gap-3">
                                         <Link to={`/admin/categorias/${cat.id}/editar`} className="i10-link inline-flex items-center gap-1.5 hover:underline">

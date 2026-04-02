@@ -1,0 +1,4 @@
+- [User Profile](user_profile.md) — Raphael, full-stack dev working on InvestNews (Laravel+React)
+- [Project Overview](project_overview.md) — InvestNews: news portal + real-time market data for investors (Investidor10 challenge)
+- [Refactoring V2](refactoring_v2.md) — Repository Pattern, Searchable trait, usePagination hook, category colors, Docker health checks
+- [Feed Config](feed_config.md) — Multi-feed support (mt5-forex, mt5-b3) with enable/disable and interval control

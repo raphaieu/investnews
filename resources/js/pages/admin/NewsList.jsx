@@ -1,71 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { formatApiDatePtBr } from '../../utils/date';
+import usePagination from '../../hooks/usePagination';
 
 export default function NewsList() {
-    const [news, setNews] = useState([]);
-    const [pagination, setPagination] = useState({});
-    const [loading, setLoading] = useState(true);
     const [cacheDebug, setCacheDebug] = useState(null);
     const [cacheDebugLoading, setCacheDebugLoading] = useState(false);
     const [cacheDebugError, setCacheDebugError] = useState(null);
-    const [searchParams, setSearchParams] = useSearchParams();
 
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const search = searchParams.get('search') || '';
-    const [searchTerm, setSearchTerm] = useState(search);
-
-    useEffect(() => {
-        setSearchTerm(search);
-    }, [search]);
-
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            const normalized = searchTerm.trim();
-            if (normalized === search) return;
-
-            const params = new URLSearchParams(searchParams);
-            if (normalized) params.set('search', normalized);
-            else params.delete('search');
-            params.delete('page');
-            setSearchParams(params, { replace: true });
-        }, 300);
-
-        return () => window.clearTimeout(timer);
-    }, [searchTerm, search, searchParams, setSearchParams]);
-
-    const fetchNews = () => {
-        setLoading(true);
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('per_page', '10');
-        if (search) params.set('search', search);
-
-        api.get(`/admin/news?${params.toString()}`)
-            .then(({ data }) => {
-                setNews(data.data || []);
-                setPagination(data.meta || {});
-            })
-            .finally(() => setLoading(false));
-    };
-
-    useEffect(() => {
-        fetchNews();
-    }, [page, search]);
-
-    const totalPages = useMemo(() => pagination.last_page || 1, [pagination.last_page]);
-
-    const handlePageChange = (targetPage) => {
-        const params = new URLSearchParams(searchParams);
-        params.set('page', String(targetPage));
-        setSearchParams(params);
-    };
+    const {
+        items: news,
+        pagination,
+        loading,
+        page,
+        searchTerm,
+        setSearchTerm,
+        totalPages,
+        handlePageChange,
+        refresh,
+    } = usePagination('/admin/news');
 
     const handleDelete = async (id) => {
         if (!confirm('Tem certeza que deseja excluir esta notícia?')) return;
         await api.delete(`/admin/news/${id}`);
-        fetchNews();
+        refresh();
     };
 
     return (

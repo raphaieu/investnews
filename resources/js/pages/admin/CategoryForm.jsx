@@ -2,12 +2,27 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
+const COLOR_OPTIONS = [
+    { value: '', label: 'Sem cor' },
+    { value: 'sky', label: 'Azul' },
+    { value: 'emerald', label: 'Verde' },
+    { value: 'indigo', label: 'Indigo' },
+    { value: 'amber', label: 'Amarelo' },
+    { value: 'rose', label: 'Rosa' },
+    { value: 'violet', label: 'Violeta' },
+    { value: 'cyan', label: 'Ciano' },
+    { value: 'orange', label: 'Laranja' },
+    { value: 'yellow', label: 'Dourado' },
+    { value: 'lime', label: 'Lima' },
+];
+
 export default function CategoryForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditing = Boolean(id);
 
     const [name, setName] = useState('');
+    const [color, setColor] = useState('');
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
@@ -15,6 +30,7 @@ export default function CategoryForm() {
         if (isEditing) {
             api.get(`/admin/categories/${id}`).then(({ data }) => {
                 setName(data.data.name);
+                setColor(data.data.color || '');
             });
         }
     }, [id, isEditing]);
@@ -25,10 +41,11 @@ export default function CategoryForm() {
         setSubmitting(true);
 
         try {
+            const payload = { name, color: color || null };
             if (isEditing) {
-                await api.put(`/admin/categories/${id}`, { name });
+                await api.put(`/admin/categories/${id}`, payload);
             } else {
-                await api.post('/admin/categories', { name });
+                await api.post('/admin/categories', payload);
             }
             navigate('/admin/categorias');
         } catch (err) {
@@ -56,6 +73,22 @@ export default function CategoryForm() {
                         className="w-full i10-input px-3 py-2 text-sm"
                     />
                     {errors.name && <p className="text-[var(--i10-danger)] text-xs mt-1">{errors.name[0]}</p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Cor</label>
+                    <select
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        className="w-full i10-input px-3 py-2 text-sm"
+                    >
+                        {COLOR_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.color && <p className="text-[var(--i10-danger)] text-xs mt-1">{errors.color[0]}</p>}
                 </div>
 
                 <div className="flex gap-3">

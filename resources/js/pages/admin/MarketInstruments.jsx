@@ -1,86 +1,61 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import usePagination from '../../hooks/usePagination';
 
 const escapeRegExp = (value) => value.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&');
 
 export default function MarketInstruments() {
-    const [rows, setRows] = useState([]);
-    const [pagination, setPagination] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [feeds, setFeeds] = useState([]);
+    const [togglingFeed, setTogglingFeed] = useState(null);
 
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const search = searchParams.get('search') || '';
-    const [searchTerm, setSearchTerm] = useState(search);
+    const {
+        items: rows,
+        pagination,
+        loading,
+        page,
+        search,
+        searchTerm,
+        setSearchTerm,
+        totalPages,
+        handlePageChange,
+        refresh,
+    } = usePagination('/admin/market-instruments', { perPage: 15 });
 
-    useEffect(() => {
-        setSearchTerm(search);
-    }, [search]);
+    const loadFeeds = useCallback(() => {
+        api.get('/admin/feed-configs').then(({ data }) => setFeeds(data));
+    }, []);
 
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            const normalized = searchTerm.trim();
-            if (normalized === search) return;
+    useEffect(() => { loadFeeds(); }, [loadFeeds]);
 
-            const params = new URLSearchParams(searchParams);
-            if (normalized) params.set('search', normalized);
-            else params.delete('search');
-            params.delete('page');
-            setSearchParams(params, { replace: true });
-        }, 300);
-
-        return () => window.clearTimeout(timer);
-    }, [searchTerm, search, searchParams, setSearchParams]);
-
-    const fetchRows = () => {
-        setLoading(true);
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('per_page', '15');
-        if (search) params.set('search', search);
-
-        api.get(`/admin/market-instruments?${params.toString()}`)
-            .then(({ data }) => {
-                setRows(data.data || []);
-                setPagination(data.meta || {});
-            })
-            .finally(() => setLoading(false));
-    };
-
-    useEffect(() => {
-        fetchRows();
-    }, [page, search]);
-
-    const totalPages = useMemo(() => pagination.last_page || 1, [pagination.last_page]);
-
-    const handlePageChange = (targetPage) => {
-        const params = new URLSearchParams(searchParams);
-        params.set('page', String(targetPage));
-        setSearchParams(params);
-    };
-
-    const clearSearch = () => {
-        const params = new URLSearchParams(searchParams);
-        params.delete('search');
-        params.delete('page');
-        setSearchParams(params);
-        setSearchTerm('');
+    const handleToggleFeed = async (feedId) => {
+        setTogglingFeed(feedId);
+        try {
+            const { data } = await api.put(`/admin/feed-configs/${feedId}/toggle`);
+            setFeeds((prev) =>
+                prev.map((f) => (f.feed_id === feedId ? { ...f, enabled: data.enabled } : f))
+            );
+        } finally {
+            setTogglingFeed(null);
+        }
     };
 
     const handleDelete = async (id) => {
         if (!confirm('Excluir este ativo? O nome voltará ao padrão do sistema, se existir.')) return;
         await api.delete(`/admin/market-instruments/${id}`);
-        fetchRows();
+        refresh();
     };
 
-    const searchTokens = Array.from(
-        new Set(
-            search
-                .trim()
-                .split(/\s+/)
-                .filter((token) => token.length > 1)
-        )
+    const searchTokens = useMemo(() =>
+        Array.from(
+            new Set(
+                search
+                    .trim()
+                    .split(/\s+/)
+                    .filter((token) => token.length > 1)
+            )
+        ),
+        [search]
     );
 
     const highlightText = (text) => {
@@ -105,6 +80,8 @@ export default function MarketInstruments() {
         });
     };
 
+    const clearSearch = () => setSearchTerm('');
+
     const emptyMessage = search
         ? 'Nenhum ativo encontrado para esta busca. Tente outro símbolo, nome ou menos palavras-chave.'
         : 'Nenhum ativo cadastrado no banco. Use os padrões do sistema ou cadastre aqui para sobrescrever.';
@@ -113,15 +90,43 @@ export default function MarketInstruments() {
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold">Ativos (cotações)</h1>
+                    <h1 className="text-2xl font-bold">Cotações</h1>
                     <p className="i10-muted text-sm mt-1">
-                        Busque por símbolo ou nome na grade — várias palavras funcionam como na busca de notícias (todos os
-                        termos precisam casar em algum dos campos).
+                        Gerencie ativos e controle o envio de cotações pelo MT5.
                     </p>
                 </div>
-                <Link to="/admin/ativos/criar" className="i10-btn-primary px-4 py-2 text-sm">
-                    Novo ativo
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                    {feeds.map((feed) => (
+                        <button
+                            key={feed.feed_id}
+                            type="button"
+                            disabled={togglingFeed === feed.feed_id}
+                            onClick={() => handleToggleFeed(feed.feed_id)}
+                            className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md border transition-colors ${
+                                feed.enabled
+                                    ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                                    : 'bg-(--i10-surface) i10-muted border-(--i10-border) hover:text-(--i10-text)'
+                            } disabled:opacity-50`}
+                            title={`${feed.enabled ? 'Desligar' : 'Ligar'} feed ${feed.feed_id}`}
+                        >
+                            <span
+                                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
+                                    feed.enabled ? 'bg-white/30' : 'bg-(--i10-border)'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform mt-0.5 ${
+                                        feed.enabled ? 'translate-x-4.5' : 'translate-x-0.5'
+                                    }`}
+                                />
+                            </span>
+                            {feed.feed_id}
+                        </button>
+                    ))}
+                    <Link to="/admin/ativos/criar" className="i10-btn-primary px-4 py-2 text-sm">
+                        Novo ativo
+                    </Link>
+                </div>
             </div>
 
             {search && (

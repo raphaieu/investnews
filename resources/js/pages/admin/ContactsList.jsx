@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import api from '../../services/api';
+import usePagination from '../../hooks/usePagination';
 import { formatApiDatePtBr } from '../../utils/date';
 
 const messagePreview = (text, max = 120) => {
@@ -11,60 +9,16 @@ const messagePreview = (text, max = 120) => {
 };
 
 export default function ContactsList() {
-    const [contacts, setContacts] = useState([]);
-    const [pagination, setPagination] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [searchParams, setSearchParams] = useSearchParams();
-
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const search = searchParams.get('search') || '';
-    const [searchTerm, setSearchTerm] = useState(search);
-
-    useEffect(() => {
-        setSearchTerm(search);
-    }, [search]);
-
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            const normalized = searchTerm.trim();
-            if (normalized === search) return;
-
-            const params = new URLSearchParams(searchParams);
-            if (normalized) params.set('search', normalized);
-            else params.delete('search');
-            params.delete('page');
-            setSearchParams(params, { replace: true });
-        }, 300);
-
-        return () => window.clearTimeout(timer);
-    }, [searchTerm, search, searchParams, setSearchParams]);
-
-    const fetchContacts = () => {
-        setLoading(true);
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('per_page', '10');
-        if (search) params.set('search', search);
-
-        api.get(`/admin/contacts?${params.toString()}`)
-            .then(({ data }) => {
-                setContacts(data.data || []);
-                setPagination(data.meta || {});
-            })
-            .finally(() => setLoading(false));
-    };
-
-    useEffect(() => {
-        fetchContacts();
-    }, [page, search]);
-
-    const totalPages = useMemo(() => pagination.last_page || 1, [pagination.last_page]);
-
-    const handlePageChange = (targetPage) => {
-        const params = new URLSearchParams(searchParams);
-        params.set('page', String(targetPage));
-        setSearchParams(params);
-    };
+    const {
+        items: contacts,
+        pagination,
+        loading,
+        page,
+        searchTerm,
+        setSearchTerm,
+        totalPages,
+        handlePageChange,
+    } = usePagination('/admin/contacts');
 
     return (
         <div className="space-y-5">

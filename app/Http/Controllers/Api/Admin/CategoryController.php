@@ -7,32 +7,25 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Services\Categories\CategoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CategoryController extends Controller
 {
+    public function __construct(private readonly CategoryService $categoryService) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
-        $search = trim((string) $request->query('search', ''));
-        $perPage = (int) $request->query('per_page', 10);
-        $perPage = max(5, min($perPage, 50));
-
         return CategoryResource::collection(
-            Category::query()
-                ->when($search !== '', function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%");
-                })
-                ->orderBy('name')
-                ->paginate($perPage)
-                ->withQueryString()
+            $this->categoryService->adminIndex($request)
         );
     }
 
     public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $category = Category::create($request->validated());
+        $category = $this->categoryService->create($request->validated());
 
         return (new CategoryResource($category))
             ->response()
@@ -46,14 +39,14 @@ class CategoryController extends Controller
 
     public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
     {
-        $category->update($request->validated());
+        $category = $this->categoryService->update($category, $request->validated());
 
         return new CategoryResource($category);
     }
 
     public function destroy(Category $category): JsonResponse
     {
-        $category->delete();
+        $this->categoryService->delete($category);
 
         return response()->json(null, 204);
     }

@@ -55,7 +55,7 @@ export default function AdminLayout() {
                             to="/admin/ativos"
                             className={`text-sm px-3 py-1.5 rounded-md border transition-colors ${isActive('/admin/ativos') ? 'bg-(--i10-brand) text-white border-(--i10-brand)' : 'bg-(--i10-surface) i10-muted border-(--i10-border) hover:text-(--i10-text)'}`}
                         >
-                            Ativos
+                            Cotações
                         </Link>
                         <a
                             href="/horizon"

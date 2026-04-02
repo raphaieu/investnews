@@ -38,6 +38,7 @@ class StoreCategoryRequest extends FormRequest
                 'unique:categories,name',
                 $slugRule,
             ],
+            'color' => ['nullable', 'string', 'max:50'],
         ];
     }
 

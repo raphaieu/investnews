@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,13 @@ use Illuminate\Support\Str;
 #[Fillable(['title', 'slug', 'content', 'category_id', 'published_at'])]
 class News extends Model
 {
-    use HasFactory;
+    use HasFactory, Searchable;
+
+    protected array $searchable = ['title', 'content'];
+
+    protected array $searchableRelations = [
+        'category' => ['name', 'slug'],
+    ];
 
     protected function casts(): array
     {
@@ -44,54 +51,6 @@ class News extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->whereNotNull('published_at')->whereDate('published_at', '<=', today());
-    }
-
-    public function scopeSearch(Builder $query, ?string $term): Builder
-    {
-        $term = trim((string) $term);
-
-        if ($term === '') {
-            return $query;
-        }
-
-        $tokens = array_values(array_filter(preg_split('/\s+/', $term) ?: []));
-        $termSlug = Str::slug($term);
-        $matchToken = function (Builder $builder, string $token, string $tokenSlug): void {
-            $builder
-                ->where('title', 'like', "%{$token}%")
-                ->orWhere('content', 'like', "%{$token}%")
-                ->orWhereHas('category', function (Builder $categoryQuery) use ($token, $tokenSlug) {
-                    $categoryQuery->where('name', 'like', "%{$token}%");
-
-                    if ($tokenSlug !== '') {
-                        $categoryQuery->orWhere('slug', 'like', "%{$tokenSlug}%");
-                    }
-                });
-        };
-
-        return $query->where(function (Builder $q) use ($term, $termSlug, $tokens, $matchToken) {
-            // Match da frase completa OU match de todos os tokens.
-            $q->where(function (Builder $phraseQuery) use ($term, $termSlug) {
-                $phraseQuery
-                    ->where('title', 'like', "%{$term}%")
-                    ->orWhere('content', 'like', "%{$term}%")
-                    ->orWhereHas('category', function (Builder $categoryQuery) use ($term, $termSlug) {
-                        $categoryQuery->where('name', 'like', "%{$term}%");
-
-                        if ($termSlug !== '') {
-                            $categoryQuery->orWhere('slug', 'like', "%{$termSlug}%");
-                        }
-                    });
-            })->orWhere(function (Builder $tokenGroupQuery) use ($tokens, $matchToken) {
-                foreach ($tokens as $token) {
-                    $tokenSlug = Str::slug($token);
-
-                    $tokenGroupQuery->where(function (Builder $tokenQuery) use ($matchToken, $token, $tokenSlug) {
-                        $matchToken($tokenQuery, $token, $tokenSlug);
-                    });
-                }
-            });
-        });
     }
 
     public function scopeInCategory(Builder $query, ?string $categorySlug): Builder

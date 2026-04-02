@@ -26,6 +26,7 @@ class UpdateMarketInstrumentRequest extends FormRequest
                 Rule::unique('market_instruments', 'symbol')->ignore($instrument->id),
             ],
             'display_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'feed_id' => ['nullable', 'string', 'max:32'],
         ];
     }
 

@@ -2,53 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { usePublicChannel } from '../hooks/useEcho'
 import api from '../services/api'
 
-/** Fallback quando a API ainda não enviou display_name (ex.: tick antes do primeiro GET). */
-const SYMBOL_NAMES_FALLBACK = {
-    WIN: 'Mini índice Bovespa',
-    WDO: 'Mini dólar',
-    PETR4: 'Petrobras',
-    VALE3: 'Vale',
-    ITUB4: 'Itaú',
-    BBDC4: 'Bradesco',
-    BBAS3: 'Banco do Brasil',
-    WEGE3: 'WEG',
-    US30: 'Dow Jones',
-    US100: 'Nasdaq 100',
-    US500: 'S&P 500',
-    DXY: 'Índice do dólar (DXY)',
-    USDOLLAR: 'Índice do dólar (DXY)',
-    GOLD: 'Ouro',
-    SILVER: 'Prata',
-    XAUUSD: 'Ouro',
-    XAGUSD: 'Prata',
-    XBRUSD: 'Petróleo Brent',
-    TESLA: 'Tesla',
-    TSLA: 'Tesla',
-    SBUX: 'Starbucks',
-    PYPL: 'PayPal',
-    NVIDIA: 'Nvidia',
-    NETFLIX: 'Netflix',
-    MICROSOFT: 'Microsoft',
-    INTEL: 'Intel',
-    GOOGLE: 'Google',
-    FACEBOOK: 'Meta (Facebook)',
-    ETHUSD: 'Ethereum',
-    DOGUSD: 'Dogecoin',
-    DOGEUSD: 'Dogecoin',
-    DISNEY: 'Disney',
-    COIN: 'Coinbase',
-    BTCUSD: 'Bitcoin',
-    AMD: 'AMD',
-    AMAZON: 'Amazon',
-    ALIBABA: 'Alibaba',
-    '#UBER': 'Uber',
-    '#SHOP': 'Shopify',
-    '#META': 'Meta',
-    '#ADBE': 'Adobe',
-    APPLE: 'Apple',
-}
-
-/** Formato estilo US (milhares com vírgula) — índices amplamente cotados assim. */
+/** Formato estilo US (milhares com virgula) — indices amplamente cotados assim. */
 const US_STYLE_SYMBOLS = new Set(['US30', 'US100', 'US500', 'DXY', 'GOLD', 'SILVER', 'BTCUSD'])
 
 function formatPrice(value, symbol) {
@@ -65,17 +19,9 @@ function formatPercent(value) {
     return `${sign}${num.toFixed(2)}%`
 }
 
-function resolveDisplayName(tick) {
-    return (
-        tick.display_name ||
-        SYMBOL_NAMES_FALLBACK[tick.symbol] ||
-        tick.symbol
-    )
-}
-
 function QuoteRow(tick) {
     const positive = parseFloat(tick.variationPercent) >= 0
-    const name = resolveDisplayName(tick)
+    const name = tick.display_name || tick.symbol
 
     return (
         <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-white border border-gray-100 hover:border-gray-200 transition-colors">
@@ -134,7 +80,6 @@ export default function MarketTickerWidget({ symbols = [] }) {
                     variationPercent: data.tick.variationPercent,
                     display_name:
                         prev[data.symbol]?.display_name ??
-                        SYMBOL_NAMES_FALLBACK[data.symbol] ??
                         data.symbol,
                 },
             }))
@@ -155,7 +100,7 @@ export default function MarketTickerWidget({ symbols = [] }) {
     const filteredDisplayed = useMemo(() => {
         if (!filterQuery) return displayed
         return displayed.filter(tick => {
-            const name = resolveDisplayName(tick)
+            const name = tick.display_name || tick.symbol
             return (
                 tick.symbol.toLowerCase().includes(filterQuery) ||
                 String(name).toLowerCase().includes(filterQuery)

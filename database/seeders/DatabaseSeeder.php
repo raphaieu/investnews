@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             MarketInstrumentSeeder::class,
+            FeedConfigSeeder::class,
         ]);
 
         $categories = Category::factory(5)->create();
