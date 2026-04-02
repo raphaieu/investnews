@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
+import MarketTickerWidget from '../components/MarketTickerWidget';
 
 const categoryStyleMap = {
     tecnologia: 'bg-sky-200 text-sky-800 border-sky-300',
@@ -120,6 +121,7 @@ export default function Home() {
     };
 
     return (
+        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-8 lg:items-start">
         <div className="space-y-7">
             <section className="hidden md:block i10-card p-6 md:p-8 bg-linear-to-r from-slate-50 to-slate-100/70">
                 <p className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold i10-badge uppercase tracking-wide">
@@ -258,6 +260,11 @@ export default function Home() {
                     )}
                 </>
             )}
+        </div>
+
+        <aside className="hidden lg:block lg:sticky lg:top-24 space-y-4">
+            <MarketTickerWidget />
+        </aside>
         </div>
     );
 }

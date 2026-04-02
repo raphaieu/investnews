@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'market' => [
+        'key' => env('MARKET_INGEST_KEY'),
+    ],
+
 ];

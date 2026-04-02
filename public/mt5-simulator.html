@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MT5 Snapshot Simulator — InvestNews</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --surface2: #f0efeb;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --muted: #6b6b67;
+    --hint: #9b9b96;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --green: #1D9E75;
+    --red: #E24B4A;
+    --amber: #BA7517;
+  }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  header { margin-bottom: 2rem; }
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+  header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--hint);
+    margin-bottom: 12px;
+  }
+
+  .config-grid { display: grid; grid-template-columns: 2fr 1fr 80px; gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus { border-color: rgba(0,0,0,0.35); background: var(--surface); }
+
+  .ticks-table { width: 100%; border-collapse: collapse; }
+  .ticks-table th {
+    font-size: 11px;
+    color: var(--hint);
+    font-weight: 500;
+    text-align: left;
+    padding: 6px 10px;
+    background: var(--surface2);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .ticks-table td { border-bottom: 0.5px solid var(--border); }
+  .ticks-table tr:last-child td { border-bottom: none; }
+  .sym-cell {
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--text);
+    white-space: nowrap;
+    width: 80px;
+  }
+  .ticks-table td input {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 8px 10px;
+    font-family: var(--mono);
+  }
+  .ticks-table td input:focus { background: #fafaf8; }
+  .ticks-table td:not(:last-child) { border-right: 0.5px solid var(--border); }
+
+  .options-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 4px; }
+  .check-group { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+  .check-group input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--text); }
+  .check-group span { font-size: 13px; color: var(--muted); }
+  .seq-badge { font-family: var(--mono); font-size: 12px; color: var(--hint); margin-left: auto; }
+  .interval-group { display: flex; align-items: center; gap: 6px; }
+  .interval-group input { width: 72px; }
+  .interval-group span { font-size: 12px; color: var(--hint); }
+
+  .curl-box {
+    background: #1a1a18;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+  }
+  .curl-box pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #c8c8c4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.7;
+  }
+
+  .actions { display: flex; gap: 8px; }
+  .btn-primary {
+    flex: 1;
+    padding: 10px 20px;
+    background: #1a1a18;
+    color: #f5f5f3;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: var(--sans);
+  }
+  .btn-primary:hover { opacity: 0.82; }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-secondary {
+    padding: 10px 14px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    background: transparent;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: background 0.1s;
+  }
+  .btn-secondary:hover { background: var(--surface2); }
+
+  .response-card { min-height: 100px; }
+  .status-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background 0.2s; }
+  .dot.ok { background: var(--green); }
+  .dot.err { background: var(--red); }
+  .dot.pending { background: var(--amber); animation: blink 0.9s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+  .status-text { font-size: 13px; color: var(--muted); }
+  .json-out {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.65;
+  }
+  .json-key { color: #185FA5; }
+  .json-str { color: #0F6E56; }
+  .json-num { color: #BA7517; }
+  .json-bool { color: #993556; }
+
+  .log-list { max-height: 160px; overflow-y: auto; }
+  .log-item { display: flex; gap: 10px; padding: 5px 0; border-bottom: 0.5px solid var(--border); font-size: 12px; font-family: var(--mono); }
+  .log-item:last-child { border-bottom: none; }
+  .log-ts { color: var(--hint); flex-shrink: 0; }
+  .log-ok { color: var(--green); }
+  .log-err { color: var(--red); }
+  .log-msg { color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .config-grid { grid-template-columns: 1fr; }
+    .options-row { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>MT5 Snapshot Simulator</h1>
+    <p>Simula o payload do MetaTrader 5 via POST para <code>/api/market/snapshot</code> — sem precisar do terminal rodando.</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Configuração</div>
+    <div class="config-grid">
+      <div class="field">
+        <label>Endpoint URL</label>
+        <input type="text" id="url" value="http://investnews.test/api/market/snapshot" />
+      </div>
+      <div class="field">
+        <label>Bearer Token</label>
+        <input type="text" id="token" value="test-secret" />
+      </div>
+      <div class="field">
+        <label>Market</label>
+        <input type="text" id="market" value="B3" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ticks</div>
+    <table class="ticks-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>last</th>
+          <th>prev_close</th>
+          <th>bid / ask (opt.)</th>
+        </tr>
+      </thead>
+      <tbody id="ticks-body">
+        <tr>
+          <td class="sym-cell">WIN</td>
+          <td><input type="number" id="WIN-last" value="137850" step="50" /></td>
+          <td><input type="number" id="WIN-prev" value="137200" step="50" /></td>
+          <td><input type="text"   id="WIN-ba"   placeholder="137800 / 137860" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">WDO</td>
+          <td><input type="number" id="WDO-last" value="5.892" step="0.001" /></td>
+          <td><input type="number" id="WDO-prev" value="5.870" step="0.001" /></td>
+          <td><input type="text"   id="WDO-ba"   placeholder="5.891 / 5.893" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">PETR4</td>
+          <td><input type="number" id="PETR4-last" value="38.52" step="0.01" /></td>
+          <td><input type="number" id="PETR4-prev" value="38.10" step="0.01" /></td>
+          <td><input type="text"   id="PETR4-ba"   placeholder="38.51 / 38.53" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">VALE3</td>
+          <td><input type="number" id="VALE3-last" value="61.20" step="0.01" /></td>
+          <td><input type="number" id="VALE3-prev" value="62.00" step="0.01" /></td>
+          <td><input type="text"   id="VALE3-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">ITUB4</td>
+          <td><input type="number" id="ITUB4-last" value="34.75" step="0.01" /></td>
+          <td><input type="number" id="ITUB4-prev" value="34.50" step="0.01" /></td>
+          <td><input type="text"   id="ITUB4-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">BTCUSD</td>
+          <td><input type="number" id="BTCUSD-last" value="85250" step="100" /></td>
+          <td><input type="number" id="BTCUSD-prev" value="83100" step="100" /></td>
+          <td><input type="text"   id="BTCUSD-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">US30</td>
+          <td><input type="number" id="US30-last" value="41850" step="50" /></td>
+          <td><input type="number" id="US30-prev" value="41200" step="50" /></td>
+          <td><input type="text"   id="US30-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">US100</td>
+          <td><input type="number" id="US100-last" value="17450" step="10" /></td>
+          <td><input type="number" id="US100-prev" value="17200" step="10" /></td>
+          <td><input type="text"   id="US100-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">US500</td>
+          <td><input type="number" id="US500-last" value="5220" step="5" /></td>
+          <td><input type="number" id="US500-prev" value="5180" step="5" /></td>
+          <td><input type="text"   id="US500-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">DXY</td>
+          <td><input type="number" id="DXY-last" value="104.25" step="0.05" /></td>
+          <td><input type="number" id="DXY-prev" value="103.90" step="0.05" /></td>
+          <td><input type="text"   id="DXY-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">GOLD</td>
+          <td><input type="number" id="GOLD-last" value="3285.00" step="0.50" /></td>
+          <td><input type="number" id="GOLD-prev" value="3240.00" step="0.50" /></td>
+          <td><input type="text"   id="GOLD-ba"   placeholder="" /></td>
+        </tr>
+        <tr>
+          <td class="sym-cell">SILVER</td>
+          <td><input type="number" id="SILVER-last" value="33.50" step="0.10" /></td>
+          <td><input type="number" id="SILVER-prev" value="32.80" step="0.10" /></td>
+          <td><input type="text"   id="SILVER-ba"   placeholder="" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Opções de disparo</div>
+    <div class="options-row">
+      <label class="check-group">
+        <input type="checkbox" id="auto-jitter" />
+        <span>Jitter automático nos preços</span>
+      </label>
+      <label class="check-group">
+        <input type="checkbox" id="auto-loop" />
+        <span>Loop contínuo</span>
+      </label>
+      <div class="interval-group">
+        <input type="number" id="loop-interval" value="2000" min="300" max="30000" step="100" />
+        <span>ms</span>
+      </div>
+      <span class="seq-badge">seq: <span id="seq-display">1</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">curl equivalente</div>
+    <div class="curl-box"><pre id="curl-preview"></pre></div>
+    <div class="actions">
+      <button class="btn-primary" id="btn-send">Disparar POST →</button>
+      <button class="btn-secondary" id="btn-reset-seq">Reset seq</button>
+      <button class="btn-secondary" id="btn-copy-curl">Copiar curl</button>
+    </div>
+  </div>
+
+  <div class="card response-card">
+    <div class="card-title">Resposta</div>
+    <div class="status-bar">
+      <div class="dot" id="status-dot"></div>
+      <span class="status-text" id="status-text">Aguardando envio...</span>
+    </div>
+    <pre class="json-out" id="json-out"></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Log de disparos</div>
+    <div class="log-list" id="log-list">
+      <div style="font-size:12px; color: var(--hint); font-family: var(--mono);">Nenhum disparo ainda.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SYMBOLS = ['WIN','WDO','PETR4','VALE3','ITUB4','BTCUSD','US30','US100','US500','DXY','GOLD','SILVER'];
+let seq = 1;
+let loopTimer = null;
+
+function getVal(id) { return document.getElementById(id).value; }
+
+function buildPayload() {
+  const ticks = SYMBOLS.map(s => {
+    const last = parseFloat(getVal(s+'-last')) || 0;
+    const prev = parseFloat(getVal(s+'-prev')) || 0;
+    const ba   = (getVal(s+'-ba') || '').trim();
+    const t = { symbol: s, last, prev_close: prev, ts: Date.now() };
+    if (ba) {
+      const parts = ba.split('/').map(x => parseFloat(x.trim()));
+      if (!isNaN(parts[0])) t.bid = parts[0];
+      if (!isNaN(parts[1])) t.ask = parts[1];
+    }
+    return t;
+  });
+  return { feed_id: 'mt5-sim', market: getVal('market') || 'B3', seq, ticks };
+}
+
+function applyJitter() {
+  SYMBOLS.forEach(s => {
+    const el = document.getElementById(s+'-last');
+    const v = parseFloat(el.value) || 0;
+    const pct = v > 1000 ? 0.0008 : 0.0025;
+    const delta = (Math.random() - 0.5) * 2 * v * pct;
+    const dec = v > 1000 ? 0 : v < 10 ? 3 : 2;
+    el.value = Math.max(0, v + delta).toFixed(dec);
+  });
+}
+
+function buildCurl() {
+  const url   = getVal('url');
+  const token = getVal('token');
+  const body  = JSON.stringify(buildPayload(), null, 2);
+  return `curl -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${token}" \\\n  -d '${body}'`;
+}
+
+function syntaxHL(json) {
+  return json
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="json-key">$1</span>:')
+    .replace(/:\s*("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, ': <span class="json-str">$2</span>')
+    .replace(/:\s*(\d+\.?\d*)/g, (m, n) => ': <span class="json-num">'+n+'</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+}
+
+function updateCurl() {
+  document.getElementById('curl-preview').textContent = buildCurl();
+}
+
+function addLog(ok, msg) {
+  const list = document.getElementById('log-list');
+  if (list.querySelector('div[style]')) list.innerHTML = '';
+  const now = new Date().toLocaleTimeString('pt-BR');
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  item.innerHTML = `<span class="log-ts">${now}</span><span class="${ok ? 'log-ok' : 'log-err'}">${ok ? 'OK' : 'ERR'}</span><span class="log-msg">${msg}</span>`;
+  list.prepend(item);
+  if (list.children.length > 50) list.removeChild(list.lastChild);
+}
+
+function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function doSend() {
+  if (document.getElementById('auto-jitter').checked) applyJitter();
+  updateCurl();
+
+  const url   = getVal('url');
+  const token = getVal('token');
+  const payload = buildPayload();
+
+  const dot  = document.getElementById('status-dot');
+  const txt  = document.getElementById('status-text');
+  const out  = document.getElementById('json-out');
+  const btn  = document.getElementById('btn-send');
+
+  dot.className = 'dot pending';
+  txt.textContent = `Enviando seq ${seq}...`;
+  out.innerHTML = '';
+  btn.disabled = true;
+
+  const t0 = Date.now();
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token,
+    };
+    const csrf = getCsrfToken();
+    if (csrf) headers['X-XSRF-TOKEN'] = csrf;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      credentials: 'same-origin',
+      body: JSON.stringify(payload)
+    });
+    const ms = Date.now() - t0;
+    let body;
+    const ct = res.headers.get('content-type') || '';
+    try { body = ct.includes('json') ? await res.json() : await res.text(); } catch(e) { body = '(empty)'; }
+    const pretty = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+
+    if (res.ok) {
+      dot.className = 'dot ok';
+      txt.textContent = `${res.status} OK — ${ms}ms — seq ${seq}`;
+      addLog(true, `seq ${seq} → ${res.status} em ${ms}ms`);
+    } else {
+      dot.className = 'dot err';
+      txt.textContent = `${res.status} ${res.statusText} — ${ms}ms`;
+      addLog(false, `seq ${seq} → ${res.status} em ${ms}ms`);
+    }
+    out.innerHTML = syntaxHL(pretty);
+    seq++;
+    document.getElementById('seq-display').textContent = seq;
+
+  } catch(e) {
+    const ms = Date.now() - t0;
+    dot.className = 'dot err';
+    txt.textContent = 'Erro de rede — verifique se o servidor está rodando';
+    out.innerHTML = `<span style="color:var(--red)">${e.message}</span>`;
+    addLog(false, e.message);
+  }
+  btn.disabled = false;
+  updateCurl();
+}
+
+document.getElementById('btn-send').addEventListener('click', doSend);
+
+document.getElementById('btn-reset-seq').addEventListener('click', () => {
+  seq = 1;
+  document.getElementById('seq-display').textContent = seq;
+  updateCurl();
+});
+
+document.getElementById('btn-copy-curl').addEventListener('click', () => {
+  navigator.clipboard.writeText(buildCurl())
+    .then(() => {
+      const btn = document.getElementById('btn-copy-curl');
+      btn.textContent = 'Copiado!';
+      setTimeout(() => btn.textContent = 'Copiar curl', 1500);
+    })
+    .catch(() => {});
+});
+
+document.getElementById('auto-loop').addEventListener('change', function() {
+  if (this.checked) {
+    const ms = Math.max(300, parseInt(getVal('loop-interval')) || 2000);
+    loopTimer = setInterval(doSend, ms);
+  } else {
+    clearInterval(loopTimer);
+    loopTimer = null;
+  }
+});
+
+document.getElementById('loop-interval').addEventListener('change', function() {
+  if (document.getElementById('auto-loop').checked) {
+    clearInterval(loopTimer);
+    const ms = Math.max(300, parseInt(this.value) || 2000);
+    loopTimer = setInterval(doSend, ms);
+  }
+});
+
+['url','market','token'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateCurl);
+});
+SYMBOLS.forEach(s => {
+  ['last','prev','ba'].forEach(f => {
+    const el = document.getElementById(s+'-'+f);
+    if (el) el.addEventListener('input', updateCurl);
+  });
+});
+
+updateCurl();
+</script>
+</body>
+</html>

@@ -5,10 +5,17 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ContactController;
 use App\Http\Controllers\Api\Admin\NewsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MarketIngestController;
 use App\Http\Controllers\Api\PublicCategoryController;
 use App\Http\Controllers\Api\PublicContactController;
 use App\Http\Controllers\Api\PublicNewsController;
 use Illuminate\Support\Facades\Route;
+
+// Market data (autenticado via bearer token do MT5)
+Route::get('/market/health', [MarketIngestController::class, 'health']);
+Route::get('/market/quotes', [MarketIngestController::class, 'quotes']);
+Route::post('/market/snapshot', [MarketIngestController::class, 'snapshot'])
+    ->middleware('throttle:120,1');
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
