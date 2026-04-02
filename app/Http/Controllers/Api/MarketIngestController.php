@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\MarketTickReceived;
 use App\Http\Controllers\Controller;
+use App\Models\MarketInstrument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -25,32 +26,34 @@ class MarketIngestController extends Controller
 
         $feedId = $jsonData['feed_id'] ?? null;
         $market = $jsonData['market'] ?? null;
-        $seq    = $jsonData['seq'] ?? null;
-        $ticks  = $jsonData['ticks'] ?? [];
+        $seq = $jsonData['seq'] ?? null;
+        $ticks = $jsonData['ticks'] ?? [];
 
         $processedCount = 0;
 
         foreach ($ticks as $tick) {
             $symbol = strtoupper($tick['symbol'] ?? '');
-            if ($symbol === '') continue;
+            if ($symbol === '') {
+                continue;
+            }
 
-            $last      = $tick['last'] ?? 0;
+            $last = $tick['last'] ?? 0;
             $prevClose = $tick['prev_close'] ?? 0;
             $variation = $last - $prevClose;
             $variationPercent = $prevClose > 0 ? ($variation / $prevClose) * 100 : 0;
 
             $tickData = [
-                'symbol'          => $symbol,
-                'last'            => $last,
-                'bid'             => $tick['bid'] ?? 0,
-                'ask'             => $tick['ask'] ?? 0,
-                'prev_close'      => $prevClose,
-                'variation'       => $variation,
+                'symbol' => $symbol,
+                'last' => $last,
+                'bid' => $tick['bid'] ?? 0,
+                'ask' => $tick['ask'] ?? 0,
+                'prev_close' => $prevClose,
+                'variation' => $variation,
                 'variationPercent' => $variationPercent,
-                'ts'              => $tick['ts'] ?? time() * 1000,
-                'feed_id'         => $feedId,
-                'market'          => $market,
-                'seq'             => $seq,
+                'ts' => $tick['ts'] ?? time() * 1000,
+                'feed_id' => $feedId,
+                'market' => $market,
+                'seq' => $seq,
             ];
 
             Redis::setex("ticks:{$symbol}", 10, json_encode($tickData));
@@ -62,12 +65,12 @@ class MarketIngestController extends Controller
         }
 
         return response()->json([
-            'ok'             => true,
-            'feed_id'        => $feedId,
-            'market'         => $market,
-            'seq'            => $seq,
+            'ok' => true,
+            'feed_id' => $feedId,
+            'market' => $market,
+            'seq' => $seq,
             'processedCount' => $processedCount,
-            'timestamp'      => now()->toISOString(),
+            'timestamp' => now()->toISOString(),
         ]);
     }
 
@@ -78,13 +81,19 @@ class MarketIngestController extends Controller
             ? array_values(array_filter(array_map('strtoupper', explode(',', $symbols))))
             : Redis::smembers('market:symbols');
 
+        $nameMap = MarketInstrument::resolvedNameMap();
+
         $quotes = [];
         foreach ($symbolList as $symbol) {
             $raw = Redis::get("ticks:{$symbol}");
-            if (!$raw) continue;
+            if (! $raw) {
+                continue;
+            }
             $data = json_decode($raw, true);
             if ($data && isset($data['symbol'])) {
-                $quotes[$data['symbol']] = $data;
+                $sym = $data['symbol'];
+                $data['display_name'] = $nameMap[$sym] ?? $sym;
+                $quotes[$sym] = $data;
             }
         }
 
@@ -110,7 +119,9 @@ class MarketIngestController extends Controller
         }
 
         foreach ($candidates as $candidate) {
-            if (!is_string($candidate) || $candidate === '') continue;
+            if (! is_string($candidate) || $candidate === '') {
+                continue;
+            }
 
             $candidate = rtrim($candidate, "\0");
 

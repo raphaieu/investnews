@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\CacheNewsDebugController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ContactController;
+use App\Http\Controllers\Api\Admin\MarketInstrumentController;
 use App\Http\Controllers\Api\Admin\NewsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MarketIngestController;
@@ -34,4 +35,5 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('/debug/cache/news', [CacheNewsDebugController::class, 'index']);
     Route::apiResource('news', NewsController::class);
     Route::apiResource('contacts', ContactController::class)->only(['index']);
+    Route::apiResource('market-instruments', MarketInstrumentController::class);
 });

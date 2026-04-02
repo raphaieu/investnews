@@ -10,6 +10,8 @@ import CategoryForm from './pages/admin/CategoryForm';
 import NewsList from './pages/admin/NewsList';
 import NewsForm from './pages/admin/NewsForm';
 import ContactsList from './pages/admin/ContactsList';
+import MarketInstruments from './pages/admin/MarketInstruments';
+import MarketInstrumentForm from './pages/admin/MarketInstrumentForm';
 
 export default function AppRoutes() {
     return (
@@ -30,6 +32,9 @@ export default function AppRoutes() {
                 <Route path="noticias/criar" element={<NewsForm />} />
                 <Route path="noticias/:id/editar" element={<NewsForm />} />
                 <Route path="contatos" element={<ContactsList />} />
+                <Route path="ativos" element={<MarketInstruments />} />
+                <Route path="ativos/criar" element={<MarketInstrumentForm />} />
+                <Route path="ativos/:id/editar" element={<MarketInstrumentForm />} />
             </Route>
         </Routes>
     );

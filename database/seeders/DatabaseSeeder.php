@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
         ]);
 
+        $this->call([
+            MarketInstrumentSeeder::class,
+        ]);
+
         $categories = Category::factory(5)->create();
 
         $categories->each(function (Category $category) {
