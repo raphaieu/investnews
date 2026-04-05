@@ -4,7 +4,8 @@
  * Nomes padrão por símbolo (MT5 / feed). Registros na tabela market_instruments
  * sobrescrevem estes valores. Use o admin ou o seeder para popular o banco.
  *
- * Símbolos com # são comuns em CFDs de ações no MT5.
+ * Símbolos com # no MT5 são armazenados sem o # (ex.: #UBER → UBER)
+ * para evitar conflitos com nomes de channels do broadcasting.
  */
 return [
     'defaults' => [
@@ -38,10 +39,10 @@ return [
         'AMAZON' => ['display_name' => 'Amazon', 'feed_id' => 'mt5-forex'],
         'ALIBABA' => ['display_name' => 'Alibaba', 'feed_id' => 'mt5-forex'],
         'APPLE' => ['display_name' => 'Apple', 'feed_id' => 'mt5-forex'],
-        '#UBER' => ['display_name' => 'Uber', 'feed_id' => 'mt5-forex'],
-        '#SHOP' => ['display_name' => 'Shopify', 'feed_id' => 'mt5-forex'],
-        '#META' => ['display_name' => 'Meta', 'feed_id' => 'mt5-forex'],
-        '#ADBE' => ['display_name' => 'Adobe', 'feed_id' => 'mt5-forex'],
+        'UBER' => ['display_name' => 'Uber', 'feed_id' => 'mt5-forex'],
+        'SHOP' => ['display_name' => 'Shopify', 'feed_id' => 'mt5-forex'],
+        'META' => ['display_name' => 'Meta', 'feed_id' => 'mt5-forex'],
+        'ADBE' => ['display_name' => 'Adobe', 'feed_id' => 'mt5-forex'],
         // Cripto
         'BTCUSD' => ['display_name' => 'Bitcoin', 'feed_id' => 'mt5-forex'],
         'ETHUSD' => ['display_name' => 'Ethereum', 'feed_id' => 'mt5-forex'],

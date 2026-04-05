@@ -66,6 +66,23 @@ class FeedConfigTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    public function test_public_feed_status_returns_all_feeds(): void
+    {
+        FeedConfig::create(['feed_id' => 'mt5-forex', 'enabled' => true, 'interval_sec' => 1]);
+        FeedConfig::create(['feed_id' => 'mt5-b3', 'enabled' => false, 'interval_sec' => 1]);
+
+        $response = $this->getJson('/api/feed/status');
+
+        $response->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'feeds' => [
+                    'mt5-forex' => true,
+                    'mt5-b3' => false,
+                ],
+            ]);
+    }
+
     public function test_feed_config_returns_disabled_feed(): void
     {
         FeedConfig::create(['feed_id' => 'mt5-b3', 'enabled' => false, 'interval_sec' => 5]);

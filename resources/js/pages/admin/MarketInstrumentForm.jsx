@@ -9,6 +9,7 @@ export default function MarketInstrumentForm() {
 
     const [symbol, setSymbol] = useState('');
     const [displayName, setDisplayName] = useState('');
+    const [feedId, setFeedId] = useState('mt5-forex');
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
@@ -17,6 +18,7 @@ export default function MarketInstrumentForm() {
             api.get(`/admin/market-instruments/${id}`).then(({ data }) => {
                 setSymbol(data.data.symbol);
                 setDisplayName(data.data.display_name);
+                setFeedId(data.data.feed_id || 'mt5-forex');
             });
         }
     }, [id, isEditing]);
@@ -31,11 +33,13 @@ export default function MarketInstrumentForm() {
                 await api.put(`/admin/market-instruments/${id}`, {
                     symbol,
                     display_name: displayName,
+                    feed_id: feedId,
                 });
             } else {
                 await api.post('/admin/market-instruments', {
                     symbol,
                     display_name: displayName,
+                    feed_id: feedId,
                 });
             }
             navigate('/admin/ativos');
@@ -78,6 +82,21 @@ export default function MarketInstrumentForm() {
                     />
                     {errors.display_name && (
                         <p className="text-[var(--i10-danger)] text-xs mt-1">{errors.display_name[0]}</p>
+                    )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Mercado</label>
+                    <select
+                        value={feedId}
+                        onChange={(e) => setFeedId(e.target.value)}
+                        className="w-full i10-input px-3 py-2 text-sm"
+                    >
+                        <option value="mt5-forex">Forex</option>
+                        <option value="mt5-b3">B3</option>
+                    </select>
+                    {errors.feed_id && (
+                        <p className="text-[var(--i10-danger)] text-xs mt-1">{errors.feed_id[0]}</p>
                     )}
                 </div>
 

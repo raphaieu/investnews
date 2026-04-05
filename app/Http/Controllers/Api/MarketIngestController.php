@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MarketInstrument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class MarketIngestController extends Controller
@@ -30,12 +31,16 @@ class MarketIngestController extends Controller
         $ticks = $jsonData['ticks'] ?? [];
 
         $processedCount = 0;
+        $errors = [];
 
         foreach ($ticks as $tick) {
-            $symbol = strtoupper($tick['symbol'] ?? '');
-            if ($symbol === '') {
+            $rawSymbol = strtoupper(trim($tick['symbol'] ?? ''));
+            if ($rawSymbol === '') {
                 continue;
             }
+
+            // Sanitiza caracteres que conflitam com channel names (#, ., etc.)
+            $symbol = MarketInstrument::sanitizeSymbol($rawSymbol);
 
             $last = $tick['last'] ?? 0;
             $prevClose = $tick['prev_close'] ?? 0;
@@ -44,6 +49,7 @@ class MarketIngestController extends Controller
 
             $tickData = [
                 'symbol' => $symbol,
+                'original_symbol' => $rawSymbol,
                 'last' => $last,
                 'bid' => $tick['bid'] ?? 0,
                 'ask' => $tick['ask'] ?? 0,
@@ -56,29 +62,42 @@ class MarketIngestController extends Controller
                 'seq' => $seq,
             ];
 
-            Redis::setex("ticks:{$symbol}", 10, json_encode($tickData));
-            Redis::sadd('market:symbols', $symbol);
+            try {
+                Redis::setex("ticks:{$symbol}", 10, json_encode($tickData));
+                Redis::sadd('market:symbols', $symbol);
 
-            event(new MarketTickReceived($tickData, $symbol));
+                event(new MarketTickReceived($tickData, $symbol));
 
-            $processedCount++;
+                $processedCount++;
+            } catch (\Throwable $e) {
+                Log::warning("MarketIngest: falha ao processar {$rawSymbol}", [
+                    'error' => $e->getMessage(),
+                ]);
+                $errors[] = $rawSymbol;
+            }
         }
 
-        return response()->json([
+        $response = [
             'ok' => true,
             'feed_id' => $feedId,
             'market' => $market,
             'seq' => $seq,
             'processedCount' => $processedCount,
             'timestamp' => now()->toISOString(),
-        ]);
+        ];
+
+        if (! empty($errors)) {
+            $response['skipped'] = $errors;
+        }
+
+        return response()->json($response);
     }
 
     public function quotes(Request $request): JsonResponse
     {
         $symbols = $request->query('symbols');
         $symbolList = $symbols
-            ? array_values(array_filter(array_map('strtoupper', explode(',', $symbols))))
+            ? array_values(array_filter(array_map(fn ($s) => MarketInstrument::sanitizeSymbol($s), explode(',', $symbols))))
             : Redis::smembers('market:symbols');
 
         $nameMap = MarketInstrument::resolvedNameMap();

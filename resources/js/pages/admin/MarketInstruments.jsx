@@ -189,6 +189,7 @@ export default function MarketInstruments() {
                                 <tr>
                                     <th className="text-left px-6 py-3 font-medium i10-muted">Símbolo</th>
                                     <th className="text-left px-6 py-3 font-medium i10-muted">Nome na grade</th>
+                                    <th className="text-left px-6 py-3 font-medium i10-muted">Mercado</th>
                                     <th className="text-right px-6 py-3 font-medium i10-muted">Ações</th>
                                 </tr>
                             </thead>
@@ -197,6 +198,15 @@ export default function MarketInstruments() {
                                     <tr key={row.id}>
                                         <td className="px-6 py-4 font-mono">{highlightText(row.symbol)}</td>
                                         <td className="px-6 py-4">{highlightText(row.display_name)}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                row.feed_id === 'mt5-b3'
+                                                    ? 'bg-amber-100 text-amber-800'
+                                                    : 'bg-sky-100 text-sky-800'
+                                            }`}>
+                                                {row.feed_id === 'mt5-b3' ? 'B3' : 'Forex'}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="inline-flex items-center gap-3">
                                                 <Link

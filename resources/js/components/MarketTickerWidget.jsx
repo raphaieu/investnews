@@ -39,10 +39,42 @@ function QuoteRow(tick) {
     )
 }
 
+function StatusBanner({ icon, title, description, color = 'gray' }) {
+    const colors = {
+        amber: 'border-amber-200 bg-amber-50 text-amber-700',
+        red: 'border-red-200 bg-red-50 text-red-600',
+        gray: 'border-gray-200 bg-gray-50 text-gray-500',
+    }
+
+    return (
+        <div className={`rounded-lg border p-4 text-center ${colors[color] || colors.gray}`}>
+            <p className="text-lg mb-1">{icon}</p>
+            <p className="text-sm font-semibold">{title}</p>
+            {description && <p className="text-xs mt-1 opacity-80">{description}</p>}
+        </div>
+    )
+}
+
 export default function MarketTickerWidget({ symbols = [] }) {
     const [ticks, setTicks] = useState({})
     const [filterText, setFilterText] = useState('')
+    const [feedStatus, setFeedStatus] = useState(null) // null = loading, object = { feed_id: bool }
+    const [feedStatusError, setFeedStatusError] = useState(false)
     const { channel, isConnected } = usePublicChannel('market-ticks')
+
+    // Fetch feed enabled/disabled status
+    useEffect(() => {
+        api.get('/feed/status')
+            .then(({ data }) => {
+                if (data.ok) {
+                    setFeedStatus(data.feeds)
+                    setFeedStatusError(false)
+                } else {
+                    setFeedStatusError(true)
+                }
+            })
+            .catch(() => setFeedStatusError(true))
+    }, [])
 
     useEffect(() => {
         const params = symbols.length ? `?symbols=${symbols.join(',')}` : ''
@@ -88,6 +120,12 @@ export default function MarketTickerWidget({ symbols = [] }) {
         return () => channel.stopListening('.market.tick')
     }, [channel, symbols])
 
+    const allFeedsDisabled = useMemo(() => {
+        if (!feedStatus) return false
+        const values = Object.values(feedStatus)
+        return values.length > 0 && values.every(enabled => !enabled)
+    }, [feedStatus])
+
     const displayed = useMemo(() => {
         if (symbols.length > 0) {
             return symbols.map(s => ticks[s]).filter(Boolean)
@@ -107,6 +145,42 @@ export default function MarketTickerWidget({ symbols = [] }) {
             )
         })
     }, [displayed, filterQuery])
+
+    // All feeds disabled by admin
+    if (allFeedsDisabled) {
+        return (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-700">Grade de Cotações</h3>
+                    <span className="inline-block w-2 h-2 rounded-full bg-gray-400" />
+                </div>
+                <StatusBanner
+                    icon="⏸"
+                    color="amber"
+                    title="Grade de cotações desligada"
+                    description="Ative o envio de cotações no painel administrativo."
+                />
+            </div>
+        )
+    }
+
+    // Feed status endpoint failed — something is wrong
+    if (feedStatusError) {
+        return (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-700">Grade de Cotações</h3>
+                    <span className="inline-block w-2 h-2 rounded-full bg-red-400" />
+                </div>
+                <StatusBanner
+                    icon="⚠"
+                    color="red"
+                    title="Indisponível no momento"
+                    description="Não foi possível verificar o status das cotações. Tente novamente mais tarde."
+                />
+            </div>
+        )
+    }
 
     return (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -131,7 +205,12 @@ export default function MarketTickerWidget({ symbols = [] }) {
             </div>
 
             {!isConnected && (
-                <p className="text-xs text-gray-400 text-center py-4">Conectando...</p>
+                <StatusBanner
+                    icon="⚠"
+                    color="red"
+                    title="Indisponível no momento"
+                    description="Conexão com o servidor de cotações perdida. Tentando reconectar..."
+                />
             )}
 
             {isConnected && displayed.length === 0 && (

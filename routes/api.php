@@ -20,6 +20,7 @@ Route::get('/market/quotes', [MarketIngestController::class, 'quotes']);
 Route::post('/market/snapshot', [MarketIngestController::class, 'snapshot'])
     ->middleware('throttle:120,1');
 Route::get('/feed/config', [FeedConfigController::class, 'show']);
+Route::get('/feed/status', [FeedConfigController::class, 'status']);
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);

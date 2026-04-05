@@ -11,6 +11,20 @@ class FeedConfigController extends Controller
 {
     public function __construct(private readonly FeedConfigService $feedConfigService) {}
 
+    /**
+     * Public feed status — no auth required.
+     * Returns enabled/disabled state of all feeds for the public widget.
+     */
+    public function status(): JsonResponse
+    {
+        $feeds = $this->feedConfigService->listAll();
+
+        return response()->json([
+            'ok' => true,
+            'feeds' => collect($feeds)->keyBy('feed_id')->map(fn ($f) => $f['enabled']),
+        ]);
+    }
+
     public function show(Request $request): JsonResponse
     {
         if ($request->bearerToken() !== config('services.market.key')) {
